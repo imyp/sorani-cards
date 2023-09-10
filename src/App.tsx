@@ -1,4 +1,4 @@
-import { useState, PropsWithChildren, useEffect } from "react";
+import { useState, PropsWithChildren, useEffect, ReactNode } from "react";
 
 const defaultCardsData: CardData[] = [
   { id: "abc", english: "Hello", kurdish: "سڵاو" },
@@ -50,7 +50,11 @@ function NavBar({ children, name }: PropsWithChildren<NavBarProps>) {
         <a className="btn btn-ghost normal-case text-xl">{name}</a>
       </div>
       <div className="flex-none">
-        <ul className="menu menu-horizontal px-1">{children}</ul>
+        <ul className="menu menu-horizontal px-1">
+          {children && (children as ReactNode[]).map((child, i) => (
+            <li key={i}>{child}</li>
+          ))}
+        </ul>
       </div>
     </div>
   );
@@ -216,17 +220,11 @@ function App() {
   return (
     <div>
       <NavBar name="سۆرانی">
-        <li>
           <button onClick={() => setState("import")}>Import</button>
-        </li>
-        <li>
           <button onClick={() => exportCardsDatatoJSON(cardsData)}>
             Export
           </button>
-        </li>
-        <li>
           <button onClick={() => setState("view")}>View</button>
-        </li>
       </NavBar>
       <div className="container mx-auto">
         {state === "view" ? (
