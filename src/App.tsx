@@ -1,4 +1,4 @@
-import { useState, PropsWithChildren } from "react";
+import { useState, PropsWithChildren, useEffect } from "react";
 
 type AllowedState = "import" | "view";
 
@@ -193,11 +193,15 @@ function Import({setCardsData, setState}: ImportProps) {
   )
 }
 
-
+const localCardsData = localStorage.getItem("cardsData");
+const startCardsData = localCardsData ? JSON.parse(localCardsData) : defaultCardsData;
 
 function App() {
   const [state, setState] = useState<AllowedState>("view");
-  const [cardsData, setCardsData] = useState<CardData[]>(defaultCardsData);
+  const [cardsData, setCardsData] = useState<CardData[]>(startCardsData);
+  useEffect(() => {
+    localStorage.setItem("cardsData", JSON.stringify(cardsData));
+  }, [cardsData]);
   return (
     <div>
         <NavBar name="سۆرانی">
