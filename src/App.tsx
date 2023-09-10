@@ -43,7 +43,7 @@ function Card({cardData, setCardsData}: CardProps) {
   const [editing, setEditing] = useState(false);
   return (
     editing ? (
-      <Edit cardData={cardData} setCardsData={setCardsData} setEditing={setEditing} />
+      <AddOrEdit cardData={cardData} setCardsData={setCardsData} setEditing={setEditing} />
     ) : (
     <div className="card bordered">
       <div className="card-body">
@@ -75,7 +75,7 @@ function Show({cardsData, setCardsData}: ShowProps) {
         <Card key={cardData.id} cardData={cardData} setCardsData={setCardsData} />
       ))}
       {adding ? (
-        <Add setCardsData={setCardsData} setAdding={setAdding} /> 
+        <AddOrEdit setCardsData={setCardsData} setEditing={setAdding} /> 
       ): (
         <button className="btn" onClick={() => setAdding(true)}>Add card</button>
       )}
@@ -102,31 +102,32 @@ const defaultCardsData: CardData[] = [
   }
 ];
 
-interface AddProps {
-  setCardsData: React.Dispatch<React.SetStateAction<CardData[]>>;
-  setAdding: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-interface EditProps {
-  cardData: CardData;
+interface AddOrEditProps {
+  cardData?: CardData;
   setCardsData: React.Dispatch<React.SetStateAction<CardData[]>>;
   setEditing: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-function Edit({cardData, setCardsData, setEditing}: EditProps) {
+function AddOrEdit({cardData, setCardsData, setEditing}: AddOrEditProps) {
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const english = (e.currentTarget[0] as HTMLInputElement).value;
     const kurdish = (e.currentTarget[1] as HTMLInputElement).value;
-    setCardsData((cards) => cards.map((card) => card.id === cardData.id ? {id: cardData.id, english, kurdish} : card));
+    let editCard: (cards: CardData[]) => CardData[];
+    if (cardData) {
+      editCard = (cards: CardData[]) => cards.map((card) => card.id === cardData.id ? {id: cardData.id, english, kurdish} : card)
+    } else {
+      editCard = (cards: CardData[]) => [...cards, {id: crypto.randomUUID(), english, kurdish}]
+    }
+    setCardsData(editCard);
     setEditing(false)
   }
   return (
     <div className="card bordered">
       <div className="card-body">
         <form className="form-control" onSubmit={submit}>
-          <input autoFocus type="text" placeholder="English" className="input input-bordered" defaultValue={cardData.english} />
-          <input type="text" placeholder="Kurdish" className="input input-bordered" defaultValue={cardData.kurdish} />
+          <input autoFocus type="text" placeholder="English" className="input input-bordered" defaultValue={cardData ? cardData.english : ""} />
+          <input type="text" placeholder="Kurdish" className="input input-bordered" defaultValue={cardData? cardData.kurdish: ""} />
           <button className="btn">Save</button>
           <button className="btn" onClick={()=>setEditing(false)}>Cancel</button>
         </form>
@@ -135,27 +136,6 @@ function Edit({cardData, setCardsData, setEditing}: EditProps) {
   )
 }
 
-function Add({setCardsData, setAdding}: AddProps) {
-  const submit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const english = (e.currentTarget[0] as HTMLInputElement).value;
-    const kurdish = (e.currentTarget[1] as HTMLInputElement).value;
-    setCardsData((cards) => [...cards, {id: crypto.randomUUID(), english, kurdish}]);
-    setAdding(false)
-  }
-  return (
-    <div className="card bordered">
-      <div className="card-body">
-        <form className="form-control" onSubmit={submit}>
-          <input autoFocus type="text" placeholder="English" className="input input-bordered" />
-          <input type="text" placeholder="Kurdish" className="input input-bordered" />
-          <button className="btn">Save</button>
-          <button className="btn" onClick={()=>setAdding(false)}>Cancel</button>
-        </form>
-      </div>
-    </div>
-  )
-}
 
 interface ImportProps {
   setCardsData: React.Dispatch<React.SetStateAction<CardData[]>>;
