@@ -1,5 +1,32 @@
 import { useState, PropsWithChildren, useEffect } from "react";
 
+const defaultCardsData: CardData[] = [
+  { id: "abc", english: "Hello", kurdish: "سڵاو" },
+  { id: "def", english: "Goodbye", kurdish: "بابە" },
+];
+const local = localStorage.getItem("cardsData");
+const localCardsData = local ? JSON.parse(local) : [];
+const startCardsData = localCardsData.length > 0 ? localCardsData : defaultCardsData;
+
+function useCardsData() {
+  const [cardsData, setCardsData] = useState<CardData[]>(startCardsData);
+  useEffect(() => {
+    localStorage.setItem("cardsData", JSON.stringify(cardsData));
+  }, [cardsData]);
+  const removeCard = (card: CardData) => {
+    setCardsData((cardsData) => cardsData.filter((c) => c.id !== card.id));
+  };
+  const addCard = (card: CardData) => {
+    setCardsData((cardsData) => [...cardsData, card]);
+  };
+  const editCard = (card: CardData) => {
+    setCardsData((cardsData) =>
+      cardsData.map((c) => (c.id === card.id ? card : c)),
+    );
+  };
+  return { cardsData, setCardsData, removeCard, addCard, editCard } as const;
+}
+
 type AllowedState = "import" | "view";
 
 interface NavBarProps {
@@ -31,15 +58,16 @@ function NavBar({ children, name }: PropsWithChildren<NavBarProps>) {
 
 interface CardProps {
   cardData: CardData;
-  setCardsData: React.Dispatch<React.SetStateAction<CardData[]>>;
+  editCard: (card: CardData) => void;
+  removeCard: (card: CardData) => void;
 }
 
-function Card({ cardData, setCardsData }: CardProps) {
+function Card({ cardData, editCard, removeCard }: CardProps) {
   const [editing, setEditing] = useState(false);
   return editing ? (
-    <Edit
+    <EditOrAdd
       cardData={cardData}
-      setCardsData={setCardsData}
+      editCard={editCard}
       setEditing={setEditing}
     />
   ) : (
@@ -52,11 +80,7 @@ function Card({ cardData, setCardsData }: CardProps) {
             Edit
           </button>
           <button
-            onClick={() =>
-              setCardsData((cardsData) =>
-                cardsData.filter((card) => card.id !== cardData.id),
-              )
-            }
+            onClick={() => removeCard(cardData)}
             className="btn btn-error"
           >
             Delete
@@ -68,9 +92,11 @@ function Card({ cardData, setCardsData }: CardProps) {
 }
 interface ShowProps {
   cardsData: CardData[];
-  setCardsData: React.Dispatch<React.SetStateAction<CardData[]>>;
+  addCard: (card: CardData) => void;
+  removeCard: (card: CardData) => void;
+  editCard: (card: CardData) => void;
 }
-function Show({ cardsData, setCardsData }: ShowProps) {
+function Show({ cardsData, addCard, removeCard, editCard }: ShowProps) {
   const [adding, setAdding] = useState(false);
   return (
     <>
@@ -78,11 +104,12 @@ function Show({ cardsData, setCardsData }: ShowProps) {
         <Card
           key={cardData.id}
           cardData={cardData}
-          setCardsData={setCardsData}
+          removeCard={removeCard}
+          editCard={editCard}
         />
       ))}
       {adding ? (
-        <Edit setCardsData={setCardsData} setEditing={setAdding} />
+        <EditOrAdd addCard={addCard} setEditing={setAdding} />
       ) : (
         <button className="btn" onClick={() => setAdding(true)}>
           Add card
@@ -98,45 +125,23 @@ interface CardData {
   kurdish: string;
 }
 
-const defaultCardsData: CardData[] = [
-  {
-    id: "abc",
-    english: "Hello",
-    kurdish: "سڵاو",
-  },
-  {
-    id: "def",
-    english: "Goodbye",
-    kurdish: "بابە",
-  },
-];
-
 interface EditProps {
   cardData?: CardData;
-  setCardsData: React.Dispatch<React.SetStateAction<CardData[]>>;
+  editCard?: (card: CardData) => void;
+  addCard?: (card: CardData) => void;
   setEditing: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-function Edit({ cardData, setCardsData, setEditing }: EditProps) {
+function EditOrAdd({ cardData, editCard, addCard, setEditing }: EditProps) {
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const english = (e.currentTarget[0] as HTMLInputElement).value;
     const kurdish = (e.currentTarget[1] as HTMLInputElement).value;
-    let editCard: (cards: CardData[]) => CardData[];
     if (cardData) {
-      editCard = (cards: CardData[]) =>
-        cards.map((card) =>
-          card.id === cardData.id
-            ? { id: cardData.id, english, kurdish }
-            : card,
-        );
+      editCard?.({ id: cardData.id, english, kurdish });
     } else {
-      editCard = (cards: CardData[]) => [
-        ...cards,
-        { id: crypto.randomUUID(), english, kurdish },
-      ];
+      addCard?.({ id: crypto.randomUUID(), english, kurdish });
     }
-    setCardsData(editCard);
     setEditing(false);
   };
   return (
@@ -204,17 +209,10 @@ function Import({ setCardsData, setState }: ImportProps) {
   );
 }
 
-const localCardsData = localStorage.getItem("cardsData");
-const startCardsData = localCardsData
-  ? JSON.parse(localCardsData)
-  : defaultCardsData;
-
 function App() {
   const [state, setState] = useState<AllowedState>("view");
-  const [cardsData, setCardsData] = useState<CardData[]>(startCardsData);
-  useEffect(() => {
-    localStorage.setItem("cardsData", JSON.stringify(cardsData));
-  }, [cardsData]);
+  const { cardsData, setCardsData, removeCard, addCard, editCard } =
+    useCardsData();
   return (
     <div>
       <NavBar name="سۆرانی">
@@ -232,7 +230,12 @@ function App() {
       </NavBar>
       <div className="container mx-auto">
         {state === "view" ? (
-          <Show cardsData={cardsData} setCardsData={setCardsData} />
+          <Show
+            cardsData={cardsData}
+            addCard={addCard}
+            removeCard={removeCard}
+            editCard={editCard}
+          />
         ) : null}
         {state === "import" ? (
           <Import setCardsData={setCardsData} setState={setState} />
