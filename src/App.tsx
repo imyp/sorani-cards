@@ -28,7 +28,7 @@ function useCardsData() {
   return { cardsData, setCardsData, removeCard, addCard, editCard } as const;
 }
 
-type AllowedState = "import" | "view" | "alphabet";
+type AllowedState = "import" | "view" | "alphabet" | "export";
 
 interface NavBarProps {
   name: string;
@@ -218,9 +218,9 @@ function Import({ setCardsData, setState }: ImportProps) {
     <div className="flex justify-center">
       <div className="card bordered w-96 h-56">
         <div className="card-body">
-          <h2 className="card-title">Import</h2>
+          <h2 className="card-title">Import cards from local file</h2>
           <form className="form-control" onSubmit={submit}>
-            <input autoFocus type="file" className="file-input file-input-bordered my-5" />
+            <input autoFocus type="file" accept=".json" className="file-input file-input-bordered my-5" />
             <div className="card-actions justify-end">
               <button className="btn">Import</button>
               <button className="btn" onClick={() => setState("view")}>
@@ -228,6 +228,36 @@ function Import({ setCardsData, setState }: ImportProps) {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface ExportProps {
+  cardsData: CardData[];
+  setState: React.Dispatch<React.SetStateAction<AllowedState>>;
+}
+
+/** Export cards data to json file on local computer. */
+function Export({ cardsData, setState }: ExportProps) {
+  return (
+    <div className="flex justify-center">
+      <div className="card bordered w-96 h-56">
+        <div className="card-body">
+          <h2 className="card-title">Export</h2>
+          <p>Save card data to local JSON file that can be imported later.</p>
+          <div className="card-actions justify-end">
+            <button 
+              className="btn"
+              onClick={() => {
+                exportCardsDatatoJSON(cardsData);
+                setState("view");
+              }}
+            >
+              Export
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -514,7 +544,7 @@ function App() {
     <div>
       <NavBar name="سۆرانی">
         <button onClick={() => setState("import")}>Import</button>
-        <button onClick={() => exportCardsDatatoJSON(cardsData)}>Export</button>
+        <button onClick={() => setState("export")}>Export</button>
         <button onClick={() => setState("view")}>View</button>
         <button onClick={() => setState("alphabet")}>Alphabet</button>
       </NavBar>
@@ -531,6 +561,9 @@ function App() {
           <Import setCardsData={setCardsData} setState={setState} />
         ) : null}
         {state === "alphabet" ? <Alphabet /> : null}
+        {state === "export" ? (
+          <Export cardsData={cardsData} setState={setState} />
+        ) : null}
       </div>
     </div>
   );
