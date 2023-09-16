@@ -88,7 +88,7 @@ function Card({ cardData, editCard, removeCard }: CardProps) {
       setEditing={setEditing}
     />
   ) : (
-    <div className="card bordered">
+    <div className="card w-96 h-56 bordered">
       <div className="card-body">
         <h2 className="card-title">{cardData.english}</h2>
         <p>{cardData.kurdish}</p>
@@ -116,23 +116,24 @@ interface ShowProps {
 function Show({ cardsData, addCard, removeCard, editCard }: ShowProps) {
   const [adding, setAdding] = useState(false);
   return (
-    <>
-      {cardsData.map((cardData) => (
-        <Card
-          key={cardData.id}
-          cardData={cardData}
-          removeCard={removeCard}
-          editCard={editCard}
-        />
-      ))}
-      {adding ? (
-        <EditOrAdd addCard={addCard} setEditing={setAdding} />
-      ) : (
-        <button className="btn" onClick={() => setAdding(true)}>
+    <div className="flex flex-col items-center gap-5">
+      <div className="flex flex-col gap-2 items-center lg:justify-center lg:flex-row lg:flex-wrap">
+        {cardsData.map((cardData) => (
+          <Card
+            key={cardData.id}
+            cardData={cardData}
+            removeCard={removeCard}
+            editCard={editCard}
+          />
+        ))}
+        {adding && <EditOrAdd addCard={addCard} setEditing={setAdding} />}
+      </div>
+      {!adding && (
+        <button className="btn w-40" onClick={() => setAdding(true)}>
           Add card
         </button>
       )}
-    </>
+    </div>
   );
 }
 
@@ -162,26 +163,28 @@ function EditOrAdd({ cardData, editCard, addCard, setEditing }: EditProps) {
     setEditing(false);
   };
   return (
-    <div className="card bordered">
+    <div className="card bordered w-96 h-56">
       <div className="card-body">
-        <form className="form-control" onSubmit={submit}>
+        <form className="form-control gap-5" onSubmit={submit}>
           <input
             autoFocus
             type="text"
             placeholder="English"
-            className="input input-bordered"
+            className="input input-bordered input-sm"
             defaultValue={cardData ? cardData.english : ""}
           />
           <input
             type="text"
             placeholder="Kurdish"
-            className="input input-bordered"
+            className="input input-bordered input-sm"
             defaultValue={cardData ? cardData.kurdish : ""}
           />
-          <button className="btn">Save</button>
-          <button className="btn" onClick={() => setEditing(false)}>
-            Cancel
-          </button>
+          <div className="card-actions justify-end">
+            <button className="btn">Save</button>
+            <button className="btn" onClick={() => setEditing(false)}>
+              Cancel
+            </button>
+          </div>
         </form>
       </div>
     </div>
@@ -212,15 +215,20 @@ function Import({ setCardsData, setState }: ImportProps) {
     }
   };
   return (
-    <div className="card bordered">
-      <div className="card-body">
-        <form className="form-control" onSubmit={submit}>
-          <input autoFocus type="file" />
-          <button className="btn">Import</button>
-          <button className="btn" onClick={() => setState("view")}>
-            Cancel
-          </button>
-        </form>
+    <div className="flex justify-center">
+      <div className="card bordered w-96 h-56">
+        <div className="card-body">
+          <h2 className="card-title">Import</h2>
+          <form className="form-control" onSubmit={submit}>
+            <input autoFocus type="file" className="file-input file-input-bordered my-5" />
+            <div className="card-actions justify-end">
+              <button className="btn">Import</button>
+              <button className="btn" onClick={() => setState("view")}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -472,7 +480,7 @@ const letters: LetterInfo[] = [
 
 function Alphabet() {
   return (
-    <div className="flex flex-wrap">
+    <div className="flex flex-wrap gap-2 justify-center">
       {letters.map((letter, i) => (
         <label className="swap swap-flip">
           <input type="checkbox" />
