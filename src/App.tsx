@@ -35,7 +35,7 @@ interface NavBarProps {
 }
 
 function exportCardsDatatoJSON(cardsData: CardData[]) {
-  const data = JSON.stringify(cardsData);
+  const data = JSON.stringify(cardsData, null, 2);
   const blob = new Blob([data], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
