@@ -28,7 +28,7 @@ function useCardsData() {
   return { cardsData, setCardsData, removeCard, addCard, editCard } as const;
 }
 
-type AllowedState = "import" | "view" | "alphabet" | "export";
+type AllowedState = "import" | "view" | "alphabet" | "export" | "practice";
 
 interface NavBarProps {
   name: string;
@@ -263,6 +263,148 @@ function Export({ cardsData, setState }: ExportProps) {
     </div>
   );
 }
+
+interface PracticeProps {
+  cardsData: CardData[];
+}
+
+function shuffle<T>(array: T[]) {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * i);
+    const temp = newArray[i];
+    newArray[i] = newArray[j];
+    newArray[j] = temp;
+  }
+  return newArray;
+}
+
+interface CompareProps {
+  userInput: string;
+  answer: string;
+}
+
+function Compare({ userInput, answer }: CompareProps) {
+  return (
+    <div className="flex flex-col items-center">
+      <p>
+        {userInput.split("").map((letter, i) => (
+          i < answer.length && (
+            letter === answer[i] ? <span key={i} className="text-green-500">{letter}</span> : <span key={i} className="text-red-500">{letter}</span>
+          )
+        ))}
+        {userInput.length < answer.length && (
+          answer.slice(userInput.length).split("").map((_, i) => (
+            <span key={i} className="text-red-500">{"_"}</span>
+          ))
+        )}
+        {userInput.length > answer.length && (
+          userInput.slice(answer.length).split("").map((letter, i) => (
+            <span key={i} className="text-red-500">{letter}</span>
+          ))
+        )}
+      </p>
+      <p>{answer}</p>
+    </div>
+  )
+}
+
+
+
+function Practice({ cardsData }: PracticeProps) {
+  const [turned, setTurned] = useState(false)
+  const [order, setOrder] = useState(shuffle(cardsData.map((card) => card.id)))
+  const [userInput, setUserInput] = useState("")
+  const [score, setScore] = useState(0)
+  const [from, setFrom] = useState<"english" | "kurdish">("english")
+  useEffect(() => {
+    setOrder(shuffle(cardsData.map((card) => card.id)))
+  }, [cardsData, from])
+  const [cardIndex, setCardIndex] = useState(0)
+  const currentCard = cardsData.find((card) => card.id === order[cardIndex])
+  const text = from === "english" ? currentCard?.english : currentCard?.kurdish
+  const answer = from === "english" ? currentCard?.kurdish : currentCard?.english
+  return (
+    <div className="flex justify-center">
+      <div>
+        <div className="card bordered w-96">
+          <div className="card-body">
+            <h2 className="card-title">
+              {text}
+              <div className="badge badge-neutral">Card {cardIndex+1}/{cardsData.length}</div>
+              <div className="badge badge-neutral">Points {score}/{!turned ? cardIndex : cardIndex + 1}</div>
+            </h2>
+            {!turned ? (
+              <form 
+                className="form-control mt-5" 
+                onSubmit={(e)=>{
+                  e.preventDefault()
+                  setTurned(true)
+                  if (userInput === answer) {
+                    setScore(score + 1)
+                  }
+                }}
+              >
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Type here"
+                  className="input input-sm input-bordered mb-5"
+                  value={userInput}
+                  onChange={(e)=>setUserInput(e.target.value)}
+                />
+                <div className="card-actions justify-end">
+                    <button className="btn" formAction="submit">Turn</button>
+                </div>
+              </form>
+            ): answer && (
+              <>
+                <Compare userInput={userInput} answer={answer} />
+                <div className="card-actions justify-end">
+                  <button
+                    className="btn"
+                    onClick={()=>{
+                      if (cardIndex === order.length - 1) {
+                        setCardIndex(0)
+                        setScore(0)
+                      } else {
+                        setCardIndex(cardIndex + 1)
+                      }
+                      setTurned(false)
+                      setUserInput("")
+                    }}
+                  >
+                    Next
+                  </button>
+                </div>
+              </>
+            )
+            }
+          </div>
+        </div>
+        <div className="flex gap-2 text-sm mt-2">
+          <p>Translating from:</p>
+          <div className="flex gap-2">
+            <p>English </p>
+            <input
+              type="checkbox"
+              className="toggle"
+              checked={from==="kurdish"}
+              onChange={()=>{
+                setFrom(from==="english" ? "kurdish" : "english")
+                setTurned(false)
+                setUserInput("")
+                setScore(0)
+              }}
+            />
+            <p> Kurdish</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 interface LetterInfo {
   alone: string;
@@ -512,9 +654,9 @@ function Alphabet() {
   return (
     <div className="flex flex-wrap gap-2 justify-center">
       {letters.map((letter, i) => (
-        <label className="swap swap-flip">
+        <label key={i} className="swap swap-flip">
           <input type="checkbox" />
-          <div key={i} className="card bordered w-40 h-40 swap-on">
+          <div className="card bordered w-40 h-40 swap-on">
             <div className="card-body">
               <h2 className="card-title">{letter.english}</h2>
               <div className="flex flex-row-reverse">
@@ -525,7 +667,7 @@ function Alphabet() {
               </div>
             </div>
           </div>
-          <div key={i} className="card bordered w-40 h-40 swap-off">
+          <div className="card bordered w-40 h-40 swap-off">
             <div className="card-body">
               <h2 className="card-title">{letter.alone}</h2>
             </div>
@@ -547,6 +689,7 @@ function App() {
         <button onClick={() => setState("export")}>Export</button>
         <button onClick={() => setState("view")}>View</button>
         <button onClick={() => setState("alphabet")}>Alphabet</button>
+        <button onClick={() => setState("practice")}>Practice</button>
       </NavBar>
       <div className="container mx-auto">
         {state === "view" ? (
@@ -564,6 +707,7 @@ function App() {
         {state === "export" ? (
           <Export cardsData={cardsData} setState={setState} />
         ) : null}
+        {state === "practice" ? <Practice cardsData={cardsData} /> : null}
       </div>
     </div>
   );
